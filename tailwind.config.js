@@ -7,15 +7,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        'hfd-bg': '#F8FAFC',        // Branco Gelo / Off-white (Fundo principal, limpo)
-        'hfd-panel': '#FFFFFF',     // Branco puro para os formulários
-        'hfd-text': '#1F2937',      // Cinza Chumbo (alto contraste para texto)
-        'hfd-accent': '#6B7280',    // Cinza Slate Médio (rótulos e secundário)
-        'hfd-border': '#E5E7EB',    // Slate Leve para bordas
-        'hfd-blue': '#1D3ECF',      // Azul Marinho Moderno (Destaques e botões primários)
+        'hfd-bg': '#E2E8F0',        // Cinza Claro Slate (Fundo principal - substitui o gelo para contraste real)
+        'hfd-panel': '#FFFFFF',     // Branco Puro (Contraste total contra o fundo cinza)
+        'hfd-input': '#F8FAFC',     // Off-white muito suave (para os inputs se destacarem no painel branco)
+        'hfd-text': '#1F2937',      // Cinza Chumbo Slate (alto contraste para texto)
+        'hfd-accent': '#64748B',    // Cinza Slate Médio (rótulos e secundário)
+        'hfd-border': '#CBD5E1',    // Slate Médio para bordas claras e visíveis
+        'hfd-blue': '#1D3ECF',      // Azul Marinho Moderno (Mantém o azul vibrante para ação)
         'hfd-blue-hover': '#162A9B', 
-        'hfd-yellow': '#E6AF00',    // Amarelo Ouro (Avisos)
-        'hfd-green': '#D7F7E1',     // Verde claro (Sucesso)
         'hfd-red': '#B72818',       // Vermelho escuro (Erros)
       },
       fontFamily: {
