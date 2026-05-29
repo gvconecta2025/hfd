@@ -4,7 +4,8 @@ import { db, auth } from '../firebase/config';
 import { collection, query, where, orderBy, onSnapshot, addDoc } from 'firebase/firestore';
 import { Message } from '../types';
 import { signOut } from 'firebase/auth';
-import { LogOut, Send } from 'lucide-react';
+import { LogOut, Send, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const Home: React.FC = () => {
   const { user } = useAuth();
@@ -13,81 +14,70 @@ export const Home: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
-    
-    // Escuta mensagens apenas da família do usuário, em tempo real
     const q = query(
       collection(db, 'messages'),
       where('familyId', '==', user.familyId),
       orderBy('createdAt', 'asc')
     );
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Message[];
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Message[];
       setMessages(msgs);
     });
-
     return () => unsubscribe();
   }, [user]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !user) return;
-
     await addDoc(collection(db, 'messages'), {
-      text: newMessage,
-      userId: user.uid,
-      familyId: user.familyId,
-      createdAt: Date.now()
+      text: newMessage, userId: user.uid, familyId: user.familyId, createdAt: Date.now()
     });
     setNewMessage('');
   };
 
-  const handleLogout = () => signOut(auth);
-
   if (!user) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-casa-bg text-casa-text font-sans">
-      {/* Header Minimalista */}
-      <header className="flex justify-between items-center p-6 bg-white shadow-sm">
+    <div className="flex flex-col h-screen bg-hfd-bg text-hfd-text font-sans">
+      <header className="flex justify-between items-center p-6 bg-hfd-panel shadow-sm z-10">
         <div>
-          <h1 className="text-xl font-medium">Nossa Casa</h1>
-          <p className="text-sm text-casa-accent">{user.familyRole}</p>
+          <h1 className="text-xl font-bold">Nossa Casa</h1>
+          <p className="text-sm text-hfd-accent">{user.familyRole}</p>
         </div>
-        <button onClick={handleLogout} className="p-2 text-casa-accent hover:text-casa-primary transition">
-          <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-4">
+          {user.role === 'admin' && (
+            <Link to="/admin" className="hidden md:flex items-center gap-2 p-2 text-hfd-accent hover:text-hfd-blue transition" title="Painel de Controle">
+              <Settings size={24} />
+              <span className="text-sm font-medium">Gestão</span>
+            </Link>
+          )}
+          <button onClick={() => signOut(auth)} className="p-2 text-hfd-accent hover:text-hfd-red transition">
+            <LogOut size={24} />
+          </button>
+        </div>
       </header>
 
-      {/* Área de Mensagens (Silenciosa e Limpa) */}
       <main className="flex-1 overflow-y-auto p-6 space-y-6">
         {messages.map((msg) => {
           const isMe = msg.userId === user.uid;
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] p-4 rounded-2xl ${isMe ? 'bg-casa-primary text-white rounded-br-none' : 'bg-white border border-slate-100 rounded-bl-none shadow-sm'}`}>
-                <p className="text-sm">{msg.text}</p>
+              <div className={`max-w-[85%] md:max-w-[60%] p-4 rounded-2xl shadow-sm ${
+                isMe ? 'bg-hfd-blue text-white rounded-br-none' : 'bg-hfd-panel text-hfd-text rounded-bl-none border border-gray-100'
+              }`}>
+                <p className="text-base">{msg.text}</p>
               </div>
             </div>
           );
         })}
       </main>
 
-      {/* Input de Texto Focado */}
-      <footer className="p-4 bg-white border-t border-slate-100">
-        <form onSubmit={handleSend} className="flex gap-2 max-w-4xl mx-auto">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Escreva algo..."
-            className="flex-1 bg-casa-bg border-none rounded-full px-6 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-casa-accent"
-          />
-          <button type="submit" className="p-3 bg-casa-primary text-white rounded-full hover:bg-slate-700 transition">
-            <Send size={18} />
+      <footer className="p-4 bg-hfd-panel border-t border-gray-100">
+        <form onSubmit={handleSend} className="flex gap-3 max-w-4xl mx-auto">
+          <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Escreva algo..."
+            className="flex-1 bg-hfd-bg border-none rounded-full px-6 py-4 text-base text-hfd-text focus:ring-2 focus:ring-hfd-blue transition" />
+          <button type="submit" className="p-4 bg-hfd-blue text-white rounded-full hover:bg-blue-800 transition shadow-md">
+            <Send size={20} />
           </button>
         </form>
       </footer>
