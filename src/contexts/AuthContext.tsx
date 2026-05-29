@@ -1,40 +1,56 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { getDoc, doc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
-import { User } from '../types';
+import { HFDUser } from '../types';
 
-interface AuthContextData {
-  user: User | null;
-  loading: boolean;
+interface AuthContextType {
+  user: HFDUser | null;
+  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextType>({ user: null, isLoading: true });
 
-export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<HFDUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    return onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      setIsLoading(true);
       if (firebaseUser) {
-        // Busca os dados estendidos do usuário no Firestore (Family ID, Role)
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUser({ uid: firebaseUser.uid, ...userDoc.data() } as User);
+        try {
+          // Busca o perfil completo no Firestore (onde estão role e familyId)
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email!,
+              displayName: userData.displayName || firebaseUser.displayName || 'Sem Nome',
+              role: userData.role || 'member',
+              familyRole: userData.familyRole || 'Membro',
+              familyId: userData.familyId || '',
+            });
+            console.log("Perfil do usuário carregado com sucesso:", userData);
+          } else {
+            console.error("Usuário autenticado, mas perfil no Firestore não encontrado.");
+            setUser(null);
+          }
+        } catch (error) {
+          console.error("Erro ao buscar perfil do usuário no Firestore:", error);
+          setUser(null);
         }
       } else {
         setUser(null);
       }
-      setLoading(false);
+      setIsLoading(false);
     });
-
-    return () => unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, isLoading }}>
+      {children}
     </AuthContext.Provider>
   );
 };
