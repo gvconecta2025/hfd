@@ -1,11 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Home } from './pages/Home';
-// Importe a página de Login (crie similar à Home, com auth com email/senha do Firebase)
+import { Login } from './pages/Login';
+import { AdminPanel } from './pages/AdminPanel';
 
+// Bloqueia quem não está logado
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return <div className="h-screen bg-casa-bg flex items-center justify-center text-casa-accent text-sm">Carregando...</div>;
   return user ? children : <Navigate to="/login" />;
+};
+
+// Bloqueia quem não é admin
+const AdminRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user?.role === 'admin' ? children : <Navigate to="/" />;
 };
 
 function App() {
@@ -13,8 +23,15 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/login" element={<Login />} />
+          
+          <Route path="/" element={
+            <PrivateRoute><Home /></PrivateRoute>
+          } />
+          
+          <Route path="/admin" element={
+            <AdminRoute><AdminPanel /></AdminRoute>
+          } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
