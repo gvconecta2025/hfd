@@ -1,41 +1,41 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Home } from './pages/Home';
 import { Login } from './pages/Login';
+import { Home } from './pages/Home';
 import { AdminPanel } from './pages/AdminPanel';
+import { Profile } from './pages/Profile';
+import { ProtectedRoute } from './routes/ProtectedRoute';
 
-// Bloqueia quem não está logado
-const PrivateRoute = ({ children }: { children: JSX.Element }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="h-screen bg-casa-bg flex items-center justify-center text-casa-accent text-sm">Carregando...</div>;
-  return user ? children : <Navigate to="/login" />;
-};
+const AppRoutes = () => {
+  const { isLoading } = useAuth(); // Erro corrigido aqui (isLoading em vez de loading)
 
-// Bloqueia quem não é admin
-const AdminRoute = ({ children }: { children: JSX.Element }) => {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  return user?.role === 'admin' ? children : <Navigate to="/" />;
-};
+  if (isLoading) {
+     return (
+      <div className="min-h-screen bg-hfd-bg flex items-center justify-center font-sans">
+        <div className="w-16 h-16 border-4 border-hfd-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
+      </div>
+    );
+  }
 
-function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route path="/" element={
-            <PrivateRoute><Home /></PrivateRoute>
-          } />
-          
-          <Route path="/admin" element={
-            <AdminRoute><AdminPanel /></AdminRoute>
-          } />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute requireAdmin={true}><AdminPanel /></ProtectedRoute>} />
+    </Routes>
   );
-}
+};
+
+export const App = () => {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </Router>
+  );
+};
 
 export default App;
