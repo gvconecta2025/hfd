@@ -1,0 +1,35 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função auxiliar: verifica se o usuário está logado
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Função auxiliar: busca a família do usuário atual
+    function getUserFamilyId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.familyId;
+    }
+
+    match /users/{userId} {
+      // O usuário pode ler o próprio perfil ou perfis de membros da mesma família
+      allow read: if isAuth() && (request.auth.uid == userId || resource.data.familyId == getUserFamilyId());
+      allow write: if isAuth() && request.auth.uid == userId;
+    }
+
+    match /families/{familyId} {
+      // Apenas membros da família podem ler os dados da família
+      allow read: if isAuth() && getUserFamilyId() == familyId;
+      allow write: if false; // Criação feita via Cloud Functions no futuro ou painel admin
+    }
+
+    match /messages/{messageId} {
+      // Apenas lê e escreve se a mensagem pertencer à família do usuário autenticado
+      allow read: if isAuth() && resource.data.familyId == getUserFamilyId();
+      allow create: if isAuth() && request.resource.data.familyId == getUserFamilyId() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Mensagens são imutáveis no MVP
+    }
+  }
+}
