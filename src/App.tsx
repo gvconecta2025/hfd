@@ -8,12 +8,12 @@ import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 const AppRoutes = () => {
-  const { isLoading } = useAuth(); // Erro corrigido aqui (isLoading em vez de loading)
+  const { isLoading } = useAuth();
 
   if (isLoading) {
      return (
-      <div className="min-h-screen bg-hfd-bg flex items-center justify-center font-sans">
-        <div className="w-16 h-16 border-4 border-hfd-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <div className="min-h-screen bg-[#E2E8F0] flex items-center justify-center font-sans">
+        <div className="w-16 h-16 border-4 border-[#1D3ECF] border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
     );
   }
