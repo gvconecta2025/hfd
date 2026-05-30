@@ -17,4 +17,6 @@ export interface Message {
   familyId: string;
   createdAt: number;
   readBy?: string[];
+  isEdited?: boolean;
+  isDeleted?: boolean;
 }
