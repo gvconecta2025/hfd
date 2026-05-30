@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db, firebaseConfig } from '../firebase/config';
-import { HFDUser, FamilyRole } from '../types'; // Erro corrigido aqui (HFDUser)
+import { HFDUser, FamilyRole } from '../types';
 
 const secondaryApp = initializeApp(firebaseConfig, 'SecondaryApp');
 const secondaryAuth = getAuth(secondaryApp);
