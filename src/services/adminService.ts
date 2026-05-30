@@ -1,54 +1,32 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { User, FamilyRole } from '../types';
+import { db, firebaseConfig } from '../firebase/config';
+import { HFDUser, FamilyRole } from '../types'; // Erro corrigido aqui (HFDUser)
 
-// O segredo: criamos uma segunda instância do Firebase app para não afetar a sessão atual
-const secondaryApp = initializeApp({
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-}, "SecondaryApp");
-
+const secondaryApp = initializeApp(firebaseConfig, 'SecondaryApp');
 const secondaryAuth = getAuth(secondaryApp);
 
-interface CreateMemberData {
-  email: string;
-  password: string;
-  displayName: string;
-  familyRole: FamilyRole;
-}
-
 export const createFamilyMember = async (
-  adminUser: User, 
-  memberData: CreateMemberData
+  adminUser: HFDUser,
+  newMember: { email: string; password: string; displayName: string; familyRole: FamilyRole }
 ) => {
-  if (adminUser.role !== 'admin') {
-    throw new Error('Apenas o administrador pode adicionar membros.');
+  try {
+    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newMember.email, newMember.password);
+    
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      email: newMember.email,
+      displayName: newMember.displayName,
+      role: 'member',
+      familyRole: newMember.familyRole,
+      familyId: adminUser.familyId,
+      createdAt: Date.now()
+    });
+
+    await signOut(secondaryAuth);
+    return userCredential.user;
+  } catch (error) {
+    console.error('Erro ao criar membro:', error);
+    throw error;
   }
-
-  // 1. Cria o usuário na instância secundária do Firebase Auth
-  const userCredential = await createUserWithEmailAndPassword(
-    secondaryAuth, 
-    memberData.email, 
-    memberData.password
-  );
-
-  const newUserId = userCredential.user.uid;
-
-  // 2. Salva os dados no Firestore vinculando à mesma Família
-  await setDoc(doc(db, 'users', newUserId), {
-    email: memberData.email,
-    displayName: memberData.displayName,
-    familyRole: memberData.familyRole,
-    familyId: adminUser.familyId,
-    role: 'member',
-    createdAt: Date.now()
-  });
-
-  // 3. Desloga o app secundário para limpar a memória
-  await secondaryAuth.signOut();
-
-  return newUserId;
 };
