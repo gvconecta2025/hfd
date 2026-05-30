@@ -16,29 +16,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       setIsLoading(true);
       if (firebaseUser) {
         try {
-          // Busca o perfil completo no Firestore (onde estão role e familyId)
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUser({
               uid: firebaseUser.uid,
-              email: firebaseUser.email!,
+              email: firebaseUser.email || '',
               displayName: userData.displayName || firebaseUser.displayName || 'Sem Nome',
               role: userData.role || 'member',
               familyRole: userData.familyRole || 'Membro',
               familyId: userData.familyId || '',
             });
-            console.log("Perfil do usuário carregado com sucesso:", userData);
           } else {
-            console.error("Usuário autenticado, mas perfil no Firestore não encontrado.");
             setUser(null);
           }
         } catch (error) {
-          console.error("Erro ao buscar perfil do usuário no Firestore:", error);
+          console.error("Erro ao carregar perfil:", error);
           setUser(null);
         }
       } else {
@@ -46,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setIsLoading(false);
     });
+    return () => unsubscribe();
   }, []);
 
   return (
